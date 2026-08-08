@@ -142,7 +142,3 @@ if prompt := st.chat_input("Enter command for Jarvis..."):
     
     st.rerun()
     
-    
-streamlit
-pandas
-numpy
