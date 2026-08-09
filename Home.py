@@ -1,10 +1,14 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import time
+from openai import OpenAI
 
 # --- Page Configuration ---
 st.set_page_config(page_title="Jarvis OS", page_icon="🧿", layout="wide", initial_sidebar_state="expanded")
+
+# --- Initialize OpenAI Client ---
+# Note: Removed the trailing space from secrets key name to prevent KeyError
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # --- Futuristic Custom CSS ---
 st.markdown("""
@@ -30,7 +34,7 @@ st.markdown("""
         padding: 10px;
     }
     
-    /* --- FIX 1: Chat Input Visibility and Size --- */
+    /* Chat Input Visibility and Size */
     div[data-testid="stChatInput"] {
         background-color: #0a0e17 !important;
         border: 1px solid #00F0FF !important;
@@ -38,11 +42,10 @@ st.markdown("""
         box-shadow: 0px 0px 15px rgba(0, 240, 255, 0.2) !important;
     }
     
-    /* Target the text you type */
     div[data-testid="stChatInput"] textarea {
         color: #00F0FF !important; 
-        -webkit-text-fill-color: #00F0FF !important; /* Forces color in all browsers */
-        font-size: 20px !important; /* Increased font size */
+        -webkit-text-fill-color: #00F0FF !important;
+        font-size: 20px !important;
         font-weight: bold !important;
         background-color: transparent !important;
     }
@@ -63,17 +66,23 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- FIX 2: SIDEBAR CLEANUP ---
-# We removed the manual page links since Streamlit automatically 
-# creates the menu at the top for you.
+# --- Sidebar Controls ---
 with st.sidebar:
     st.markdown("## 🌐 Jarvis Network")
     st.markdown("---")
     st.caption("SYSTEM STATUS: ONLINE 🟢")
+    
+    # Button to clear history and reset memory
+    if st.button("🗑️ Clear Conversation Memory", use_container_width=True):
+        st.session_state.messages = [
+            {"role": "assistant", "content": "System Memory Flushed. Jarvis at your service. Ask me a question, or tell me to generate a **chart**."}
+        ]
+        st.rerun()
 
 # --- Session State Initialization ---
 if "view_mode" not in st.session_state:
     st.session_state.view_mode = "full_chat" 
+
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "System Online. Jarvis at your service. Ask me a question, or tell me to generate a **chart**."}
@@ -129,16 +138,48 @@ if graph_col is not None:
                 "Status": ["Optimal", "Elevated", "Stable"]
             }), use_container_width=True)
 
-# --- Chat Input & Logic ---
+# --- Chat Input & AI Response Generation ---
 if prompt := st.chat_input("Enter command for Jarvis..."):
+    # 1. Append user prompt to session state history
     st.session_state.messages.append({"role": "user", "content": prompt})
     
+    # 2. Check for visualization trigger words
     trigger_words = ["chart", "plot", "graph", "visual", "draw"]
     if any(word in prompt.lower() for word in trigger_words):
         st.session_state.view_mode = "split"
-        st.session_state.messages.append({"role": "assistant", "content": f"Processing visualization request. Opening split-screen for '{prompt}'..."})
-    else:
-        st.session_state.messages.append({"role": "assistant", "content": f"Acknowledged: {prompt} (Backend logic pending in Step 2)"})
-    
+
+    # 3. Display user message immediately in chat container
+    with chat_container:
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        # 4. Generate response using OpenAI API with full conversation memory
+        with st.chat_message("assistant"):
+            try:
+                # Prepare message history for the LLM
+                api_messages = [
+                    {"role": "system", "content": "You are Jarvis, an advanced futuristic AI system assistant. Speak clearly, concisely, and stay in character."}
+                ]
+                
+                # Append all existing history so the AI remembers context
+                for m in st.session_state.messages:
+                    api_messages.append({"role": m["role"], "content": m["content"]})
+
+                # Stream or generate completion
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=api_messages
+                )
+                
+                ai_reply = response.choices[0].message.content
+                st.markdown(ai_reply)
+                
+                # Save assistant response to session state history
+                st.session_state.messages.append({"role": "assistant", "content": ai_reply})
+
+            except Exception as e:
+                error_msg = f"**System Error:** Failed to process query. Details: `{str(e)}`"
+                st.error(error_msg)
+                st.session_state.messages.append({"role": "assistant", "content": error_msg})
+
     st.rerun()
-    
