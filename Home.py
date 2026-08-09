@@ -1,81 +1,109 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from openai import OpenAI
+from google import genai
 
 # --- Page Configuration ---
-st.set_page_config(page_title="Jarvis OS", page_icon="🧿", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Jarvis Premium", page_icon="✨", layout="wide", initial_sidebar_state="expanded")
 
-# --- Initialize OpenAI Client ---
-# Note: Removed the trailing space from secrets key name to prevent KeyError
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# --- Initialize Gemini Client ---
+client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
-# --- Futuristic Custom CSS ---
+# --- Premium UI Custom CSS ---
 st.markdown("""
     <style>
-    /* Main Background & Text */
-    .stApp {
-        background-color: #0a0e17;
-        color: #e0e6ed;
+    /* Import Premium Font */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+
+    /* Main Background & Text - Sleek Slate Gradient */
+    .stApp { 
+        background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+        color: #f8fafc; 
+        font-family: 'Inter', sans-serif;
     }
     
-    /* Glowing Headers */
-    h1, h2, h3 {
-        color: #00F0FF !important;
-        text-shadow: 0px 0px 10px rgba(0, 240, 255, 0.5);
-        font-family: 'Courier New', Courier, monospace;
+    /* Clean Sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #020617 !important;
+        border-right: 1px solid #1e293b;
+    }
+
+    /* Premium Headers */
+    h1, h2, h3 { 
+        color: #f1f5f9 !important; 
+        font-weight: 600 !important;
+        letter-spacing: -0.5px;
     }
     
-    /* Glassmorphism Containers */
-    div[data-testid="stVerticalBlock"] > div {
-        background: rgba(15, 22, 36, 0.6);
-        border-radius: 10px;
-        border: 1px solid rgba(0, 240, 255, 0.1);
-        padding: 10px;
+    /* Subtitles & Captions */
+    .stMarkdown p {
+        color: #cbd5e1 !important;
+    }
+
+    /* Glassmorphism Containers (Cards) */
+    div[data-testid="stVerticalBlock"] > div { 
+        background: rgba(30, 41, 59, 0.4); 
+        border-radius: 12px; 
+        border: 1px solid rgba(255, 255, 255, 0.05); 
+        padding: 15px; 
+        backdrop-filter: blur(10px);
     }
     
-    /* Chat Input Visibility and Size */
-    div[data-testid="stChatInput"] {
-        background-color: #0a0e17 !important;
-        border: 1px solid #00F0FF !important;
-        border-radius: 15px !important;
-        box-shadow: 0px 0px 15px rgba(0, 240, 255, 0.2) !important;
+    /* --- FIX: Perfect High-Contrast Chat Input --- */
+    div[data-testid="stChatInput"] { 
+        background-color: #1e293b !important; 
+        border: 1px solid #334155 !important; 
+        border-radius: 12px !important; 
+        box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.2) !important; 
     }
     
-    div[data-testid="stChatInput"] textarea {
-        color: #00F0FF !important; 
-        -webkit-text-fill-color: #00F0FF !important;
-        font-size: 20px !important;
-        font-weight: bold !important;
-        background-color: transparent !important;
+    /* The text you type */
+    div[data-testid="stChatInput"] textarea { 
+        color: #ffffff !important; 
+        -webkit-text-fill-color: #ffffff !important; 
+        font-size: 16px !important; 
+        background-color: transparent !important; 
+    }
+
+    /* Modern Premium Buttons */
+    .stButton > button { 
+        background-color: #0ea5e9; 
+        color: #ffffff !important; 
+        border: none; 
+        border-radius: 8px; 
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        transition: all 0.2s ease; 
+    }
+    .stButton > button:hover { 
+        background-color: #0284c7; 
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4); 
+        transform: translateY(-2px);
     }
     
-    /* Futuristic Buttons */
-    .stButton > button {
-        background: transparent;
-        color: #00F0FF;
-        border: 1px solid #00F0FF;
-        border-radius: 5px;
-        transition: all 0.3s ease;
+    /* Secondary/Sidebar Button Styling */
+    [data-testid="stSidebar"] .stButton > button {
+        background-color: #1e293b;
+        border: 1px solid #334155;
     }
-    .stButton > button:hover {
-        background: #00F0FF;
-        color: #0a0e17;
-        box-shadow: 0px 0px 15px #00F0FF;
+    [data-testid="stSidebar"] .stButton > button:hover {
+        background-color: #ef4444; /* Red hover for delete/clear */
+        border-color: #ef4444;
     }
     </style>
 """, unsafe_allow_html=True)
 
 # --- Sidebar Controls ---
 with st.sidebar:
-    st.markdown("## 🌐 Jarvis Network")
+    st.markdown("## ✨ Jarvis Workspace")
     st.markdown("---")
-    st.caption("SYSTEM STATUS: ONLINE 🟢")
+    st.caption("🟢 SYSTEM STATUS: OPTIMAL")
+    st.write("Welcome to your intelligent workspace. Seamlessly chat, analyze data, and generate insights.")
     
-    # Button to clear history and reset memory
-    if st.button("🗑️ Clear Conversation Memory", use_container_width=True):
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    if st.button("🗑️ Clear Chat History", use_container_width=True):
         st.session_state.messages = [
-            {"role": "assistant", "content": "System Memory Flushed. Jarvis at your service. Ask me a question, or tell me to generate a **chart**."}
+            {"role": "assistant", "content": "Workspace cleared. How can I assist you today?"}
         ]
         st.rerun()
 
@@ -85,100 +113,91 @@ if "view_mode" not in st.session_state:
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "System Online. Jarvis at your service. Ask me a question, or tell me to generate a **chart**."}
+        {"role": "assistant", "content": "Hello. I am Jarvis. How can I assist you today? (Tip: Ask me to show a **chart** to see the split-screen)."}
     ]
 
 def toggle_view():
-    if st.session_state.view_mode == "full_chat":
-        st.session_state.view_mode = "split"
-    else:
-        st.session_state.view_mode = "full_chat"
+    st.session_state.view_mode = "split" if st.session_state.view_mode == "full_chat" else "full_chat"
 
 # --- Main Header & Controls ---
 col_head1, col_head2 = st.columns([4, 1])
 with col_head1:
-    st.title("🧿 JARVIS CORE // Main Terminal")
+    st.title("Jarvis AI Terminal")
 with col_head2:
-    btn_text = "⛶ Enter Split-Screen" if st.session_state.view_mode == "full_chat" else "🗖 Full Chat Mode"
+    st.write("") # Spacing alignment
+    btn_text = "⛶ Open Analytics" if st.session_state.view_mode == "full_chat" else "🗖 Close Analytics"
     st.button(btn_text, on_click=toggle_view, use_container_width=True)
 
 st.markdown("---")
 
 # --- Dynamic Layout Engine ---
 if st.session_state.view_mode == "split":
-    chat_col, graph_col = st.columns([1.5, 1])
+    chat_col, graph_col = st.columns([1.2, 1], gap="large")
 else:
     chat_col = st.container()
     graph_col = None
 
-# --- Left / Main Area: Chat Interface ---
+# --- Chat Interface ---
 with chat_col:
-    st.subheader("💬 Comm-Link")
-    chat_container = st.container(height=500) 
+    chat_container = st.container(height=550, border=False) 
     with chat_container:
         for msg in st.session_state.messages:
             with st.chat_message(msg["role"]):
                 st.markdown(msg["content"])
 
-# --- Right Area: Visualizations (Split mode only) ---
+# --- Right Area: Visualizations ---
 if graph_col is not None:
     with graph_col:
-        st.subheader("📊 Visual Projection")
-        tab1, tab2 = st.tabs(["Data Chart", "Raw Analysis"])
+        st.subheader("Data Analytics")
+        tab1, tab2 = st.tabs(["Visualization", "Raw Data"])
         
         with tab1:
-            st.caption("Auto-generated visual interface.")
-            chart_data = pd.DataFrame(np.random.randn(20, 3), columns=['Tech', 'Defense', 'Energy'])
-            st.area_chart(chart_data, color=["#00F0FF", "#FF0055", "#00FF66"])
+            st.caption("Real-time metric projections.")
+            # Softer, premium colors for the chart
+            chart_data = pd.DataFrame(np.random.randn(20, 3), columns=['Alpha', 'Beta', 'Gamma'])
+            st.area_chart(chart_data, color=["#0ea5e9", "#8b5cf6", "#10b981"])
             
         with tab2:
             st.caption("Live system metrics.")
             st.dataframe(pd.DataFrame({
-                "Sector": ["Tech", "Defense", "Energy"],
-                "Status": ["Optimal", "Elevated", "Stable"]
-            }), use_container_width=True)
+                "Sector": ["Alpha (Tech)", "Beta (Defense)", "Gamma (Energy)"],
+                "Status": ["Optimal", "Review Needed", "Stable"]
+            }), use_container_width=True, hide_index=True)
 
-# --- Chat Input & AI Response Generation ---
-if prompt := st.chat_input("Enter command for Jarvis..."):
-    # 1. Append user prompt to session state history
+# --- Chat Input & Gemini Logic ---
+if prompt := st.chat_input("Message Jarvis..."):
+    # Append User Message
     st.session_state.messages.append({"role": "user", "content": prompt})
     
-    # 2. Check for visualization trigger words
-    trigger_words = ["chart", "plot", "graph", "visual", "draw"]
-    if any(word in prompt.lower() for word in trigger_words):
+    # Check for Split-Screen Triggers
+    if any(word in prompt.lower() for word in ["chart", "plot", "graph", "visual", "analytics", "data"]):
         st.session_state.view_mode = "split"
 
-    # 3. Display user message immediately in chat container
+    # Display User Message
     with chat_container:
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # 4. Generate response using OpenAI API with full conversation memory
+        # Generate AI Response
         with st.chat_message("assistant"):
             try:
-                # Prepare message history for the LLM
-                api_messages = [
-                    {"role": "system", "content": "You are Jarvis, an advanced futuristic AI system assistant. Speak clearly, concisely, and stay in character."}
-                ]
-                
-                # Append all existing history so the AI remembers context
+                # Format conversation history for Gemini API
+                formatted_contents = []
                 for m in st.session_state.messages:
-                    api_messages.append({"role": m["role"], "content": m["content"]})
+                    role = "user" if m["role"] == "user" else "model"
+                    formatted_contents.append({"role": role, "parts": [{"text": m["content"]}]})
 
-                # Stream or generate completion
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=api_messages
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=formatted_contents
                 )
                 
-                ai_reply = response.choices[0].message.content
+                ai_reply = response.text
                 st.markdown(ai_reply)
-                
-                # Save assistant response to session state history
                 st.session_state.messages.append({"role": "assistant", "content": ai_reply})
 
             except Exception as e:
-                error_msg = f"**System Error:** Failed to process query. Details: `{str(e)}`"
+                error_msg = f"**System Error:** `{str(e)}`"
                 st.error(error_msg)
                 st.session_state.messages.append({"role": "assistant", "content": error_msg})
 
