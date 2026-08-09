@@ -188,7 +188,7 @@ if prompt := st.chat_input("Message Jarvis..."):
                     formatted_contents.append({"role": role, "parts": [{"text": m["content"]}]})
 
                 response = client.models.generate_content(
-                    model='gemini-2.5-flash',
+                    model='gemini-1.5-flash', 
                     contents=formatted_contents
                 )
                 
