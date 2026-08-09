@@ -189,7 +189,7 @@ if prompt := st.chat_input("Message Jarvis..."):
 
                 # Verified compatible model string for Google Gen AI SDK
                 response = client.models.generate_content(
-                    model='gemini-2.5-flash',
+                    model='gemini-2.0-flash',
                     contents=formatted_contents
                 )
                 
