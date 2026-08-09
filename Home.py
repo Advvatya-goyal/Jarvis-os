@@ -1,46 +1,41 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from google import genai
+from groq import Groq
 
 # --- Page Configuration ---
 st.set_page_config(page_title="Jarvis Workspace", page_icon="✨", layout="wide", initial_sidebar_state="expanded")
 
-# --- Initialize Gemini Client ---
-client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+# --- Initialize Groq Client ---
+client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 # --- Clean Light Theme CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    /* Main Background & Text - Clean White Setup */
     .stApp { 
         background-color: #f8fafc; 
         color: #0f172a; 
         font-family: 'Inter', sans-serif;
     }
     
-    /* Clean Light Sidebar */
     [data-testid="stSidebar"] {
         background-color: #ffffff !important;
         border-right: 1px solid #e2e8f0;
     }
 
-    /* Crisp High-Contrast Headers */
     h1, h2, h3 { 
         color: #0f172a !important; 
         font-weight: 700 !important;
         letter-spacing: -0.5px;
     }
     
-    /* Paragraph & Message Text */
     .stMarkdown p {
         color: #334155 !important;
         font-size: 15px;
     }
 
-    /* Sleek Cards/Containers */
     div[data-testid="stVerticalBlock"] > div { 
         background: #ffffff; 
         border-radius: 12px; 
@@ -49,7 +44,6 @@ st.markdown("""
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
     
-    /* --- FIX: Chat Input Box & Typed Text in Pure Black --- */
     div[data-testid="stChatInput"] { 
         background-color: #ffffff !important; 
         border: 1.5px solid #cbd5e1 !important; 
@@ -57,7 +51,6 @@ st.markdown("""
         box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05) !important; 
     }
     
-    /* Pure Black text while typing */
     div[data-testid="stChatInput"] textarea { 
         color: #000000 !important; 
         -webkit-text-fill-color: #000000 !important; 
@@ -66,7 +59,6 @@ st.markdown("""
         background-color: transparent !important; 
     }
 
-    /* Modern Primary Buttons */
     .stButton > button { 
         background-color: #2563eb; 
         color: #ffffff !important; 
@@ -81,7 +73,6 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25); 
     }
     
-    /* Sidebar Delete/Clear Button Styling */
     [data-testid="stSidebar"] .stButton > button {
         background-color: #f1f5f9;
         color: #0f172a !important;
@@ -100,7 +91,7 @@ with st.sidebar:
     st.markdown("## ✨ Jarvis Network")
     st.markdown("---")
     st.caption("🟢 SYSTEM STATUS: ONLINE")
-    st.write("Clean high-contrast workspace interface.")
+    st.write("Powered by ultra-fast Groq AI models.")
     
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("🗑️ Clear Chat History", use_container_width=True):
@@ -115,7 +106,7 @@ if "view_mode" not in st.session_state:
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hello. I am Jarvis. How can I assist you today? (Tip: Mention **chart** or **analytics** to open split-screen mode)."}
+        {"role": "assistant", "content": "Hello. I am Jarvis, running on Groq. How can I assist you today? (Tip: Mention **chart** or **analytics** to open split-screen mode)."}
     ]
 
 def toggle_view():
@@ -165,35 +156,66 @@ if graph_col is not None:
                 "Status": ["Optimal", "Review Needed", "Stable"]
             }), use_container_width=True, hide_index=True)
 
-# --- Chat Input & Gemini Logic ---
+
+# --- Groq Fallback Engine ---
+def get_groq_response(messages):
+    """
+    Tries multiple Groq models. If the first one fails or hits a rate limit, 
+    it automatically falls back to the next one.
+    """
+    fallback_models = [
+        "llama-3.3-70b-versatile", # Primary: Smartest
+        "llama-3.1-8b-instant",    # Backup 1: Very fast and reliable
+        "mixtral-8x7b-32768"       # Backup 2: Great fallback alternative
+    ]
+    
+    last_error = None
+    for model_name in fallback_models:
+        try:
+            completion = client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=1024
+            )
+            return completion.choices[0].message.content
+        except Exception as e:
+            last_error = str(e)
+            # Silently catch the error and try the next model in the list
+            continue
+            
+    # If all models fail, raise the final error
+    raise Exception(f"All Groq models failed. Last error: {last_error}")
+
+
+# --- Chat Input & AI Logic ---
 if prompt := st.chat_input("Message Jarvis..."):
-    # Append User Prompt
+    # Append user message
     st.session_state.messages.append({"role": "user", "content": prompt})
     
-    # Trigger Split-Screen if analytics words are present
+    # Check for analytics trigger words
     if any(word in prompt.lower() for word in ["chart", "plot", "graph", "visual", "analytics", "data"]):
         st.session_state.view_mode = "split"
 
-    # Render Immediately
     with chat_container:
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # Generate Response using standard Gemini Model
         with st.chat_message("assistant"):
             try:
-                formatted_contents = []
-                for m in st.session_state.messages:
-                    role = "user" if m["role"] == "user" else "model"
-                    formatted_contents.append({"role": role, "parts": [{"text": m["content"]}]})
-
-                # Verified compatible model string for Google Gen AI SDK
-                response = client.models.generate_content(
-                    model='gemini-2.0-flash',
-                    contents=formatted_contents
-                )
+                # Format messages for Groq API (including a system prompt for persona)
+                formatted_messages = [
+                    {"role": "system", "content": "You are Jarvis, a highly intelligent and polite AI assistant. Keep responses helpful and concise."}
+                ]
                 
-                ai_reply = response.text
+                # Add conversation history
+                for m in st.session_state.messages:
+                    if m["role"] in ["user", "assistant"]:
+                        formatted_messages.append({"role": m["role"], "content": m["content"]})
+
+                # Call the Fallback Engine
+                ai_reply = get_groq_response(formatted_messages)
+                
                 st.markdown(ai_reply)
                 st.session_state.messages.append({"role": "assistant", "content": ai_reply})
 
