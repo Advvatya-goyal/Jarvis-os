@@ -15,7 +15,7 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     .stApp { background-color: #f8fafc; color: #0f172a; font-family: 'Inter', sans-serif; }
-    .slide-container { background: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #e2e8f0; min-height: 50vh; overflow-y: auto; }
+    /* Native Streamlit containers will now handle the white box styling automatically */
     </style>
 """, unsafe_allow_html=True)
 
@@ -67,24 +67,24 @@ with chat_col:
                 with st.chat_message(msg["role"]):
                     st.markdown(msg["content"])
 
-# --- Right Area: Dynamic Slides/Tabs ---
+# --- Right Area: Dynamic Slides/Tabs (FIXED LAYOUT) ---
 if slide_col is not None:
     with slide_col:
         tab1, tab2 = st.tabs(["Slide 1", "Slide 2"])
         
         with tab1:
-            st.markdown('<div class="slide-container">', unsafe_allow_html=True)
-            st.markdown(st.session_state.slide1_text)
-            if st.session_state.slide1_chart is not None:
-                st.bar_chart(st.session_state.slide1_chart)
-            st.markdown('</div>', unsafe_allow_html=True)
+            # Using native Streamlit container to lock content inside a bordered box
+            with st.container(height=520, border=True):
+                st.markdown(st.session_state.slide1_text)
+                if st.session_state.slide1_chart is not None:
+                    st.bar_chart(st.session_state.slide1_chart)
                 
         with tab2:
-            st.markdown('<div class="slide-container">', unsafe_allow_html=True)
-            st.markdown(st.session_state.slide2_text)
-            if st.session_state.slide2_chart is not None:
-                st.bar_chart(st.session_state.slide2_chart)
-            st.markdown('</div>', unsafe_allow_html=True)
+            # Using native Streamlit container to lock content inside a bordered box
+            with st.container(height=520, border=True):
+                st.markdown(st.session_state.slide2_text)
+                if st.session_state.slide2_chart is not None:
+                    st.bar_chart(st.session_state.slide2_chart)
 
 # --- Groq Logic & Parsing ---
 def process_prompt(prompt):
